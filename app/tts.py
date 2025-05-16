@@ -8,17 +8,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # path ke folder utilitas TTS
 COQUI_DIR = os.path.join(BASE_DIR, "coqui_utils")
 
-# TODO: Lengkapi jalur path ke file model TTS
-# File model (misalnya checkpoint_1260000-inference.pth) harus berada di dalam folder coqui_utils/
-COQUI_MODEL_PATH = ...
+# Path ke file model TTS
+COQUI_MODEL_PATH = os.path.join(COQUI_DIR, "checkpoint_1260000-inference.pth")
 
-# TODO: Lengkapi jalur path ke file konfigurasi
-# File config.json harus berada di dalam folder coqui_utils/
-COQUI_CONFIG_PATH = ...
+# Path ke file konfigurasi
+COQUI_CONFIG_PATH = os.path.join(COQUI_DIR, "config.json")
 
-# TODO: Tentukan nama speaker yang digunakan
-# Pilih nama speaker yang sesuai dengan isi file speakers.pth (misalnya: "wibowo")
-COQUI_SPEAKER = ...
+# Nama speaker yang digunakan
+COQUI_SPEAKER = "wibowo"
 
 def transcribe_text_to_speech(text: str) -> str:
     """
@@ -29,12 +26,23 @@ def transcribe_text_to_speech(text: str) -> str:
         str: Path ke file audio hasil konversi.
     """
     path = _tts_with_coqui(text)
+    
+    # Tambahkan log untuk Gradio
+    log_file = os.path.join(tempfile.gettempdir(), "voice_chat_log.txt")
+    with open(log_file, "a", encoding="utf-8") as log:
+        log.write(f"\nTTS output path: {path}\n")
+    
     return path
 
 # === ENGINE 1: Coqui TTS ===
 def _tts_with_coqui(text: str) -> str:
     tmp_dir = tempfile.gettempdir()
     output_path = os.path.join(tmp_dir, f"tts_{uuid.uuid4()}.wav")
+    
+    # Log untuk Gradio
+    log_file = os.path.join(tempfile.gettempdir(), "voice_chat_log.txt")
+    with open(log_file, "a", encoding="utf-8") as log:
+        log.write(f"\n > Text: {text}\n")
 
     # jalankan Coqui TTS dengan subprocess
     cmd = [
@@ -47,7 +55,9 @@ def _tts_with_coqui(text: str) -> str:
     ]
     
     try:
-        subprocess.run(cmd, check=True)
+        # Gunakan file log untuk mencatat output TTS
+        with open(log_file, "a", encoding="utf-8") as log:
+            subprocess.run(cmd, check=True, stdout=log, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] TTS subprocess failed: {e}")
         return "[ERROR] Failed to synthesize speech"
